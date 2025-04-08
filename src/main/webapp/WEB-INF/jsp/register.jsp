@@ -34,13 +34,13 @@
         </div>
         <div class="mb-3">
             <label for="userPassword" class="form-label">비밀번호 </label>
-            <input type="password" class="form-control form-control-lg rounded-1" id="userPassword" name="userPassword" placeholder="8자 이상의 비밀번호">
+            <input type="password" class="form-control form-control-lg rounded-1" id="userPassword" name="userPassword" placeholder="6자 이상의 비밀번호">
 <%--            <div class="valid-feedback">Valid</div>--%>
             <div class="invalid-feedback">비밀번호는 1개 이상 특수문자, 알파벳, 숫자 포함!</div>
         </div>
         <div class="mb-3">
             <label for="userPassword2" class="form-label">비밀번호 확인 </label>
-            <input type="password" class="form-control form-control-lg rounded-1" id="userPassword2" name="userPassword2" placeholder="8자 이상의 비밀번호">
+            <input type="password" class="form-control form-control-lg rounded-1" id="userPassword2" name="userPassword2" placeholder="6자 이상의 비밀번호">
 <%--            <div class="valid-feedback">Valid</div>--%>
             <div class="invalid-feedback">비밀번호가 일치하지 않음!</div>
         </div>
