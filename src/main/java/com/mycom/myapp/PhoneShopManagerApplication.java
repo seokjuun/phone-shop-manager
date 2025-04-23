@@ -1,13 +1,13 @@
-package me.hongseokjun.myapp;
+package com.mycom.myapp;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class PhoneStroeManageApplication {
+public class PhoneShopManagerApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(PhoneStroeManageApplication.class, args);
+        SpringApplication.run(PhoneShopManagerApplication.class, args);
     }
 
 }
