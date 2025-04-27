@@ -1,7 +1,7 @@
 package com.mycom.myapp.service.impl;
 
 import com.mycom.myapp.dto.EmployeeDto;
-import com.mycom.myapp.dto.EmployeeRequestDto;
+import com.mycom.myapp.dto.EmployeeResultDto;
 import com.mycom.myapp.entity.Employee;
 import com.mycom.myapp.entity.Role;
 import com.mycom.myapp.repository.EmployeeRepository;
@@ -10,12 +10,11 @@ import com.mycom.myapp.service.EmployeeService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -25,24 +24,51 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     @Transactional
-    public EmployeeDto register(EmployeeRequestDto dto) {
-        Set<Role> roles = dto.getRoleIds().stream()
-                .map(roleRepository::findById)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toSet());
+    public EmployeeResultDto register(EmployeeDto dto) {
+//        Set<Role> roles = dto.getRoleIds().stream()
+//                .map(roleRepository::findById)
+//                .filter(Optional::isPresent)
+//                .map(Optional::get)
+//                .collect(Collectors.toSet());
+//
+//        Employee employee = Employee.builder()
+//                .name(dto.getName())
+//                .email(dto.getEmail())
+//                .password(dto.getPassword())
+//                .registerDate(LocalDateTime.now())
+//                .roles(roles)
+//                .build();
+//
+//        Employee saved = employeeRepository.save(employee);
+//
+//        return toDto(saved);
 
-        Employee employee = Employee.builder()
-                .name(dto.getName())
-                .email(dto.getEmail())
-                .password(dto.getPassword()) // TODO: 암호화 적용 필요
-                .registerDate(LocalDateTime.now())
-                .roles(roles)
-                .build();
+        EmployeeResultDto resultDto = new EmployeeResultDto();
 
-        Employee saved = employeeRepository.save(employee);
+        try {
+            Role roleStaff = roleRepository.findByRoleName("스태프");
+            Set<Role> roles = Set.of(roleStaff);
 
-        return toDto(saved);
+            Employee employee = Employee.builder()
+                    .name(dto.getName())
+                    .email(dto.getEmail())
+                    .password(dto.getPassword())
+                    .registerDate(LocalDateTime.now())
+                    .roles(roles)
+                    .build();
+
+            Employee saved = employeeRepository.save(employee);
+
+            resultDto.setEmployeeDto(toDto(saved));
+            resultDto.setResult("success");
+        }   catch (Exception e){
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+
+            resultDto.setResult("fail");
+        }
+
+
+        return resultDto;
     }
 
     /*
@@ -71,6 +97,34 @@ public class EmployeeServiceImpl implements EmployeeService {
     public void deleteById(Long id) {
         employeeRepository.deleteById(id);
     }
+
+    @Override
+    public EmployeeResultDto login(String email, String password) {
+        EmployeeResultDto employeeResultDto = new EmployeeResultDto();
+
+        Optional<Employee> optionalEmployee = employeeRepository.findByEmail(email);
+
+        if(optionalEmployee.isPresent()){
+            Employee employee = optionalEmployee.get();
+
+            if (employee.getPassword().equals(password)){
+//                Map<Long, String> roles = new HashMap<>();
+//                employee.getRoles().forEach(employeeRole -> roles.put(employeeRole.getRoleId(), employeeRole.getRoleName()));
+//
+                EmployeeDto employeeDto = toDto(employee);
+
+                employeeResultDto.setEmployeeDto(employeeDto);
+                employeeResultDto.setResult("success");
+            } else{
+                employeeResultDto.setResult("fail");
+            }
+        } else{
+            employeeResultDto.setResult("notfound");
+        }
+
+        return employeeResultDto;
+    }
+
 
     private EmployeeDto toDto(Employee e) {
         return EmployeeDto.builder()

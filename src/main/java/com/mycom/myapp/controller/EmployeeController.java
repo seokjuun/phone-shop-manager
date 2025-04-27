@@ -1,8 +1,10 @@
 package com.mycom.myapp.controller;
 
 import com.mycom.myapp.dto.EmployeeDto;
-import com.mycom.myapp.dto.EmployeeRequestDto;
+import com.mycom.myapp.dto.EmployeeResultDto;
+import com.mycom.myapp.entity.Employee;
 import com.mycom.myapp.service.EmployeeService;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +19,7 @@ public class EmployeeController {
     private final EmployeeService employeeService;
 
     @PostMapping("/register")
-    public ResponseEntity<EmployeeDto> register(@RequestBody EmployeeRequestDto dto) {
+    public ResponseEntity<EmployeeResultDto> register(EmployeeDto dto) {
         return ResponseEntity.ok(employeeService.register(dto));
     }
 
@@ -36,5 +38,26 @@ public class EmployeeController {
     public ResponseEntity<Void> deleteById(@PathVariable Long id) {
         employeeService.deleteById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/login")
+    public EmployeeResultDto login(@RequestParam("email") String email,
+                                   @RequestParam("password") String password,
+                                   HttpSession session){
+        EmployeeResultDto employeeResultDto = employeeService.login(email, password);
+        if (employeeResultDto.getResult().equals("success")){
+            session.setAttribute("employeeDto", employeeResultDto.getEmployeeDto());
+        }
+        return employeeResultDto;
+    }
+
+    @GetMapping("/logout")
+    public EmployeeResultDto logout(HttpSession session){
+        EmployeeResultDto employeeResultDto = new EmployeeResultDto();
+
+        session.invalidate();
+        employeeResultDto.setResult("success");
+
+        return employeeResultDto;
     }
 }

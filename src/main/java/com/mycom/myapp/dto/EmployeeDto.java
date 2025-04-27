@@ -14,6 +14,7 @@ public class EmployeeDto {
     private Long employeeId;
     private String name;
     private String email;
+    private String password;
     private Set<String> roles;
     private LocalDateTime registerDate;
 }
