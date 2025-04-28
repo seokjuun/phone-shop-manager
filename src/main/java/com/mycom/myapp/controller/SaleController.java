@@ -21,10 +21,6 @@ public class SaleController {
 
     private final SaleService saleService;
 
-//    @GetMapping("/stat")
-//    public SalesStatDto getSalesStat(@RequestParam Long employeeId) {
-//        return saleService.getSalesStat(employeeId);
-//    }
 
 
 

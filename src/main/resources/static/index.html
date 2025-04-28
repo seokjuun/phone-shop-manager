@@ -49,7 +49,7 @@
         initUI();
 
         document.querySelector("#linkLogout").onclick = async function() {
-            let response = await fetch("/api/employees/logout");
+            let response = await fetch("/api/logout");
             let data = await response.json();
             if (data.result === "success") {
                 sessionStorage.clear();

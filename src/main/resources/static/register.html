@@ -45,12 +45,15 @@
             name, email, password
         });
 
-        let url = "/api/employees/register";
+        let url = "/api/employees";
 
         let fetchOptions = {
             method: "POST",
-            body: urlParams
-        }
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ name, email, password })
+        };
 
         let response = await fetch(url, fetchOptions);
         let data = await response.json();
