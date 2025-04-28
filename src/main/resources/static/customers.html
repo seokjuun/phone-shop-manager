@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>고객 관리</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- ✅ 네브바 추가 -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="index.html">핸드폰팝니다</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0" id="menuArea">
+                <!-- 동적 메뉴 -->
+            </ul>
+
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item" id="userNameWrapper" style="display:none;">
+                    <a class="nav-link" href="#"><span id="userRole"></span> <span id="userName"></span> 님</a>
+                </li>
+                <li class="nav-item" id="linkLogin">
+                    <a class="nav-link" href="login.html">로그인</a>
+                </li>
+                <li class="nav-item" id="linkSignup">
+                    <a class="nav-link" href="register.html">회원가입</a>
+                </li>
+                <li class="nav-item" id="linkLogout" style="display:none;">
+                    <a class="nav-link" href="#">로그아웃</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-5">
+    <h2>고객 관리</h2>
+
+    <!-- 고객 등록/수정 폼 -->
+    <form id="customerForm" class="mb-4">
+        <input type="hidden" id="customerId"> <!-- 수정 모드용 -->
+
+        <div class="mb-3">
+            <label for="name" class="form-label">이름</label>
+            <input type="text" class="form-control" id="name" placeholder="이름 입력">
+        </div>
+
+        <div class="mb-3">
+            <label for="phoneNumber" class="form-label">전화번호</label>
+            <input type="text" class="form-control" id="phoneNumber" placeholder="전화번호 입력">
+        </div>
+
+        <div class="mb-3">
+            <label for="email" class="form-label">이메일</label>
+            <input type="email" class="form-control" id="email" placeholder="이메일 입력">
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary flex-grow-1" id="btnSave">등록</button>
+            <button type="button" class="btn btn-secondary flex-grow-1" id="btnReset">취소</button>
+        </div>
+    </form>
+
+    <!-- 고객 리스트 -->
+    <table class="table table-bordered">
+        <thead>
+        <tr>
+            <th>고객 ID</th>
+            <th>이름</th>
+            <th>전화번호</th>
+            <th>이메일</th>
+            <th>가입일자</th>
+            <th>관리</th>
+        </tr>
+        </thead>
+        <tbody id="customerTableBody">
+        </tbody>
+    </table>
+    <nav>
+        <ul class="pagination" id="paginationArea"></ul>
+    </nav>
+</div>
+
+<script>
+    window.onload = function() {
+        initUI();
+        loadCustomers();
+
+        document.getElementById('btnSave').onclick = saveCustomer;
+        document.getElementById('btnReset').onclick = resetForm;
+
+        document.querySelector("#linkLogout").onclick = async function() {
+            let response = await fetch("/api/logout");
+            let data = await response.json();
+            if (data.result === "success") {
+                sessionStorage.clear();
+                location.reload();
+            }
+        }
+    };
+
+    function initUI() {
+        let name = sessionStorage.getItem("name");
+        let rolesJson = sessionStorage.getItem("roles");
+
+        if (name != null && rolesJson != null) {
+            let roles = JSON.parse(rolesJson);
+            const rolePriority = { "점장": 1, "매니저": 2, "스태프": 3 };
+            roles.sort((a, b) => (rolePriority[a] || 999) - (rolePriority[b] || 999));
+            let highestRole = roles[0];
+
+            document.querySelector("#userRole").innerText = highestRole;
+            document.querySelector("#userName").innerText = name;
+            document.querySelector("#userNameWrapper").style.display = 'block';
+            document.querySelector("#linkLogout").style.display = 'block';
+            document.querySelector("#linkLogin").style.display = 'none';
+            document.querySelector("#linkSignup").style.display = 'none';
+
+            createMenu(highestRole);
+        } else {
+            document.querySelector("#userRole").innerText = '';
+            document.querySelector("#userName").innerText = '';
+            document.querySelector("#userNameWrapper").style.display = 'none';
+            document.querySelector("#linkLogout").style.display = 'none';
+            document.querySelector("#linkLogin").style.display = 'block';
+            document.querySelector("#linkSignup").style.display = 'block';
+        }
+    }
+
+    function createMenu(role) {
+        const menuArea = document.querySelector("#menuArea");
+        menuArea.innerHTML = '';
+
+        addMenuItem('판매 관리', 'sales.html');
+        if (role === '점장' || role === '매니저') {
+            addMenuItem('재고 관리', 'stock.html');
+            addMenuItem('고객 관리', 'customers.html');
+        }
+        if (role === '점장') {
+            addMenuItem('직원 관리', 'employees.html');
+            addMenuItem('요금제 관리', 'plans.html');
+        }
+    }
+
+    function addMenuItem(name, link) {
+        let li = document.createElement("li");
+        li.className = "nav-item";
+        li.innerHTML = `<a class="nav-link" href="${link}">${name}</a>`;
+        document.querySelector("#menuArea").appendChild(li);
+    }
+
+    async function loadCustomers(page = 0) {
+        const response = await fetch(`/api/customers?page=${page}`);
+        const data = await response.json();
+        const customers = data.content;
+
+        const tbody = document.getElementById('customerTableBody');
+        tbody.innerHTML = '';
+
+        customers.forEach(c => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${c.customerId}</td>
+                <td>${c.name}</td>
+                <td>${c.phoneNumber}</td>
+                <td>${c.email}</td>
+                <td>${formatDateTime(c.registerDate)}</td>
+                <td>
+                    <button class="btn btn-sm btn-warning" onclick="editCustomer(${c.customerId})">수정</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${c.customerId})">삭제</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        createPagination(data.totalPages, page);
+    }
+
+    function createPagination(totalPages, currentPage) {
+        const paginationArea = document.getElementById('paginationArea');
+        paginationArea.innerHTML = '';
+
+        for (let i = 0; i < totalPages; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#">${i + 1}</a>`;
+            li.onclick = () => loadCustomers(i);
+            paginationArea.appendChild(li);
+        }
+    }
+
+    async function saveCustomer() {
+        const customerId = document.getElementById('customerId').value;
+        const name = document.getElementById('name').value;
+        const phoneNumber = document.getElementById('phoneNumber').value;
+        const email = document.getElementById('email').value;
+
+        if (!name || !phoneNumber || !email) {
+            alert('모든 항목을 입력하세요.');
+            return;
+        }
+
+        const customerData = { name, phoneNumber, email };
+        let url = '/api/customers';
+        let method = 'POST';
+
+        if (customerId) {
+            url += `/${customerId}`;
+            method = 'PUT';
+        }
+
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(customerData)
+        });
+
+        if (response.ok) {
+            alert(customerId ? '수정되었습니다.' : '등록되었습니다.');
+            resetForm();
+            loadCustomers();
+        } else {
+            alert('저장 실패');
+        }
+    }
+
+    async function editCustomer(customerId) {
+        const response = await fetch(`/api/customers/${customerId}`);
+        const customer = await response.json();
+
+        document.getElementById('customerId').value = customer.customerId;
+        document.getElementById('name').value = customer.name;
+        document.getElementById('phoneNumber').value = customer.phoneNumber;
+        document.getElementById('email').value = customer.email;
+
+        document.getElementById('btnSave').innerText = '수정 완료';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function deleteCustomer(customerId) {
+        if (confirm('정말 삭제하시겠습니까?')) {
+            const response = await fetch(`/api/customers/${customerId}`, { method: 'DELETE' });
+
+            if (response.ok) {
+                alert('삭제되었습니다.');
+                loadCustomers();
+            } else {
+                alert('삭제 실패');
+            }
+        }
+    }
+
+    function resetForm() {
+        document.getElementById('customerForm').reset();
+        document.getElementById('customerId').value = '';
+        document.getElementById('btnSave').innerText = '등록';
+    }
+
+    function formatDateTime(dateTimeString) {
+        if (!dateTimeString) return '';
+        const date = new Date(dateTimeString);
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    }
+
+    function pad(n) {
+        return n < 10 ? '0' + n : n;
+    }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -4,9 +4,8 @@ import com.mycom.myapp.dto.CustomerDto;
 import com.mycom.myapp.dto.CustomerRequestDto;
 import com.mycom.myapp.service.CustomerService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/customers")
@@ -21,8 +20,8 @@ public class CustomerController {
     }
 
     @GetMapping
-    public List<CustomerDto> findAll() {
-        return customerService.findAll();
+    public Page<CustomerDto> findAll(@RequestParam(defaultValue = "0") int page) {
+        return customerService.findAll(page);
     }
 
     @GetMapping("/{customerId}")

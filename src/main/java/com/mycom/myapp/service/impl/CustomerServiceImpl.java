@@ -6,12 +6,13 @@ import com.mycom.myapp.entity.Customer;
 import com.mycom.myapp.repository.CustomerRepository;
 import com.mycom.myapp.service.CustomerService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -30,44 +31,31 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public List<CustomerDto> findAll() {
-        List<Customer> customerList = customerRepository.findAll();
-        List<CustomerDto> customerDtoList = new ArrayList<>();
+    public Page<CustomerDto> findAll(int page) {
+        Pageable pageable = PageRequest.of(page, 10, Sort.by("customerId").descending());
+        Page<Customer> customerPage = customerRepository.findAll(pageable);
 
-        customerList.forEach(customer -> {
-            CustomerDto customerDto = toDto(customer);
-            customerDtoList.add(customerDto);
-        });
-        return customerDtoList;
+        return customerPage.map(this::toDto);
     }
 
     @Override
     public CustomerDto findById(Long customerId) {
-        Optional<Customer> optionalCustomer = customerRepository.findById(customerId);
-        if (optionalCustomer.isPresent()){
-            Customer customer = optionalCustomer.get();
-            return toDto(customer);
-        } else {
-            throw new RuntimeException("고객을 찾을 수 없습니다.");
-        }
+        return customerRepository.findById(customerId)
+                .map(this::toDto)
+                .orElseThrow(() -> new RuntimeException("고객을 찾을 수 없습니다."));
     }
 
     @Override
     public CustomerDto update(Long customerId, CustomerRequestDto dto) {
-        Optional<Customer> optionalCustomer = customerRepository.findById(customerId);
-        if (optionalCustomer.isPresent()){
-            Customer customer = optionalCustomer.get();
-
-            customer.setName(dto.getName());
-            customer.setPhoneNumber(dto.getPhoneNumber());
-            customer.setEmail(dto.getEmail());
-
-            Customer updated = customerRepository.save(customer);
-            return toDto(updated);
-
-        } else {
-            throw new RuntimeException("고객을 찾을 수 없습니다.");
-        }
+        return customerRepository.findById(customerId)
+                .map(customer -> {
+                    customer.setName(dto.getName());
+                    customer.setPhoneNumber(dto.getPhoneNumber());
+                    customer.setEmail(dto.getEmail());
+                    Customer updated = customerRepository.save(customer);
+                    return toDto(updated);
+                })
+                .orElseThrow(() -> new RuntimeException("고객을 찾을 수 없습니다."));
     }
 
     @Override
