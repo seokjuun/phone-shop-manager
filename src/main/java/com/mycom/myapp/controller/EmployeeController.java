@@ -2,7 +2,7 @@ package com.mycom.myapp.controller;
 
 import com.mycom.myapp.dto.EmployeeDto;
 import com.mycom.myapp.dto.EmployeeResultDto;
-import com.mycom.myapp.entity.Employee;
+
 import com.mycom.myapp.service.EmployeeService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +33,7 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.findById(id));
     }
 
-//    @DeleteMapping("/{id}")
+
     @GetMapping("/delete/{id}")
     public ResponseEntity<Void> deleteById(@PathVariable Long id) {
         employeeService.deleteById(id);

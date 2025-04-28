@@ -9,23 +9,16 @@
 
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="container-fluid">
-        <a class="navbar-brand" href="#">MySite</a>
+        <a class="navbar-brand" href="#">핸드폰팝니다</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
             <span class="navbar-toggler-icon"></span>
         </button>
 
         <div class="collapse navbar-collapse" id="navbarContent">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a class="nav-link" href="#">주제1</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">주제2</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">주제3</a>
-                </li>
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0" id="menuArea">
+                <!-- 여기에 자바스크립트로 동적으로 메뉴 추가 -->
             </ul>
+
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item" id="userNameWrapper" style="display:none;">
                     <a class="nav-link" href="#"><span id="userRole"></span> <span id="userName"></span> 님</a>
@@ -45,9 +38,12 @@
 </nav>
 
 <div class="container mt-5">
-    <h1>Welcome to the Index Page!</h1>
-</div>
+    <h1 class="mb-4" id="welcomeMessage">로그인 하셈</h1>
 
+    <div class="row" id="cardArea">
+        <!-- 카드들을 자바스크립트로 동적으로 생성 -->
+    </div>
+</div>
 <script>
     window.onload = function() {
         initUI();
@@ -55,28 +51,20 @@
         document.querySelector("#linkLogout").onclick = async function() {
             let response = await fetch("/api/employees/logout");
             let data = await response.json();
-            console.log(data);
-
             if (data.result === "success") {
-                sessionStorage.removeItem("name");
-                sessionStorage.removeItem("email");
-                sessionStorage.removeItem("roles");
-                initUI();
+                sessionStorage.clear();
+                location.reload();
             }
         }
-    }
+    };
 
     function initUI() {
         let name = sessionStorage.getItem("name");
-        let rolesJson = sessionStorage.getItem("roles"); // roles 배열 가져옴
+        let rolesJson = sessionStorage.getItem("roles");
 
         if (name != null && rolesJson != null) {
-            let roles = JSON.parse(rolesJson); // JSON 문자열 -> 배열로 변환
-
-            // 역할 우선순위 설정
+            let roles = JSON.parse(rolesJson);
             const rolePriority = { "점장": 1, "매니저": 2, "스태프": 3 };
-
-            // 가장 높은 권한 선택
             roles.sort((a, b) => (rolePriority[a] || 999) - (rolePriority[b] || 999));
             let highestRole = roles[0];
 
@@ -86,6 +74,11 @@
             document.querySelector("#linkLogout").style.display = 'block';
             document.querySelector("#linkLogin").style.display = 'none';
             document.querySelector("#linkSignup").style.display = 'none';
+
+            document.querySelector("#welcomeMessage").innerText = `어서오세요, ${name}님!`;
+
+            createMenu(highestRole);
+            fetchAndCreateDashboard(highestRole); // ✅ employeeId 넘기지 않고
         } else {
             document.querySelector("#userRole").innerText = '';
             document.querySelector("#userName").innerText = '';
@@ -94,6 +87,82 @@
             document.querySelector("#linkLogin").style.display = 'block';
             document.querySelector("#linkSignup").style.display = 'block';
         }
+    }
+
+    function createMenu(role) {
+        const menuArea = document.querySelector("#menuArea");
+        menuArea.innerHTML = '';
+
+        addMenuItem('판매 관리', 'sales.html');
+        if (role === '점장' || role === '매니저') {
+            addMenuItem('재고 관리', 'stock.html');
+            addMenuItem('고객 관리', 'customers.html');
+        }
+        if (role === '점장') {
+            addMenuItem('직원 관리', 'employees.html');
+            addMenuItem('요금제 관리', 'plans.html');
+        }
+    }
+
+    function addMenuItem(name, link) {
+        let li = document.createElement("li");
+        li.className = "nav-item";
+        li.innerHTML = `<a class="nav-link" href="${link}">${name}</a>`;
+        document.querySelector("#menuArea").appendChild(li);
+    }
+
+    async function fetchAndCreateDashboard(role) {
+        try {
+            const response = await fetch("/api/stat/check");
+            const stat = await response.json();
+
+            const cardArea = document.querySelector("#cardArea");
+            cardArea.innerHTML = '';
+
+            // 본인 통계
+            createCard('오늘 내 판매 건수', stat.myStat.todaySalesCount + '건');
+            createCard('이번달 내 판매 건수', stat.myStat.monthSalesCount + '건');
+            createCard('이번달 내 매출 합계', formatCurrency(stat.myStat.monthSalesTotal) + '원');
+
+            // 전체 통계 (점장, 매니저만)
+            if (role === '점장' || role === '매니저') {
+                createCard('오늘 전체 판매 건수', stat.totalStat.todaySalesCount + '건');
+                createCard('이번달 전체 판매 건수', stat.totalStat.monthSalesCount + '건');
+                createCard('이번달 전체 매출 합계', formatCurrency(stat.totalStat.monthSalesTotal) + '원');
+
+
+                // 매출 TOP 3 직원
+                if (stat.top3Employees && stat.top3Employees.length > 0) {
+                    let topEmployees = stat.top3Employees.map(e => `${e.employeeName}`).join(', ');
+                    createCard('매출 Top 3 직원', topEmployees);
+                }
+            }
+
+            createCard('품절 임박 기기 수', stat.lowStockCount + '개');
+            createCard('이번달 신규 고객 수', stat.newCustomerCount + '명');
+        } catch (error) {
+            console.error('통계 가져오기 실패:', error);
+        }
+    }
+
+    function createCard(title, value) {
+        const cardArea = document.querySelector("#cardArea");
+        let col = document.createElement("div");
+        col.className = "col-md-4 mb-3";
+        col.innerHTML = `
+    <div class="card h-100">
+        <div class="card-body">
+            <h5 class="card-title">${title}</h5>
+            <p class="card-text fs-4 fw-bold">${value}</p>
+        </div>
+    </div>
+    `;
+        cardArea.appendChild(col);
+    }
+
+    function formatCurrency(amount) {
+        if (amount == null) return '0';
+        return Number(amount).toLocaleString('ko-KR');
     }
 </script>
 

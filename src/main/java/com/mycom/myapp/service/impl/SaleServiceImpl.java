@@ -2,6 +2,8 @@ package com.mycom.myapp.service.impl;
 
 import com.mycom.myapp.dto.SaleRequestDto;
 import com.mycom.myapp.dto.SaleResponseDto;
+import com.mycom.myapp.dto.SaleTopEmployeeDto;
+import com.mycom.myapp.dto.SalesStatDto;
 import com.mycom.myapp.entity.*;
 import com.mycom.myapp.repository.*;
 import com.mycom.myapp.service.SaleService;
@@ -9,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +25,16 @@ public class SaleServiceImpl implements SaleService {
     private final PaymentTermRepository paymentTermRepository;
     private final SaleRepository saleRepository;
 
+    // 판매 스탯
+    @Override
+    public SalesStatDto getSalesStat(Long employeeId) {
+        return saleRepository.findSalesStatByEmployeeId(employeeId)
+                .orElse(new SalesStatDto(0L, 0L, 0L)); // 데이터 없으면 0으로
+    }
+
+
+
+    // 판매 등록 계산
     @Override
     public SaleResponseDto calculateAndSaveSale(SaleRequestDto dto) {
         Customer customer = customerRepository.findById(dto.getCustomerId()).orElseThrow();
