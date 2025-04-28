@@ -25,24 +25,6 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     @Transactional
     public EmployeeResultDto register(EmployeeDto dto) {
-//        Set<Role> roles = dto.getRoleIds().stream()
-//                .map(roleRepository::findById)
-//                .filter(Optional::isPresent)
-//                .map(Optional::get)
-//                .collect(Collectors.toSet());
-//
-//        Employee employee = Employee.builder()
-//                .name(dto.getName())
-//                .email(dto.getEmail())
-//                .password(dto.getPassword())
-//                .registerDate(LocalDateTime.now())
-//                .roles(roles)
-//                .build();
-//
-//        Employee saved = employeeRepository.save(employee);
-//
-//        return toDto(saved);
-
         EmployeeResultDto resultDto = new EmployeeResultDto();
 
         try {
@@ -108,9 +90,6 @@ public class EmployeeServiceImpl implements EmployeeService {
             Employee employee = optionalEmployee.get();
 
             if (employee.getPassword().equals(password)){
-//                Map<Long, String> roles = new HashMap<>();
-//                employee.getRoles().forEach(employeeRole -> roles.put(employeeRole.getRoleId(), employeeRole.getRoleName()));
-//
                 EmployeeDto employeeDto = toDto(employee);
 
                 employeeResultDto.setEmployeeDto(employeeDto);

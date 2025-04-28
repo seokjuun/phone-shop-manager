@@ -2,6 +2,8 @@ package com.mycom.myapp.dto;
 
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -12,4 +14,5 @@ public class CustomerDto {
     private String name;
     private String phoneNumber;
     private String email;
+    private LocalDateTime registerDate;
 }
